@@ -10,7 +10,7 @@ def sh(*a, cwd=None, env=None):
 
 def test_connect_empty_then_existing_repo(tmp_path, monkeypatch):
     monkeypatch.setenv("COUGSTIVAL_HOME", str(tmp_path / "home"))
-    remote = str(tmp_path / "remote.git")
+    remote = (tmp_path / "remote.git").as_posix()   # forward slashes: backslashes break git config on Windows
     sh("git", "init", "--bare", "-b", "main", remote)
     cfgfile = tmp_path / "gitconfig"             # pretend github.com is the local bare repo
     cfgfile.write_text(f'[url "{remote}"]\n\tinsteadOf = git@github.com:me/board.git\n')
