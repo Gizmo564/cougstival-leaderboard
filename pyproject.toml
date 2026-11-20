@@ -1,6 +1,6 @@
 [project]
 name = "cougstival-leaderboard"
-version = "1.0.0"
+version = "1.0.1"
 description = "Per-day leaderboards for Goosechase events, published to GitHub Pages or your local network"
 requires-python = ">=3.9"
 dependencies = ["playwright>=1.40", "tzdata"]
