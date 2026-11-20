@@ -1,10 +1,12 @@
-"""Keep the scheduler running all week: a systemd user service on Linux, a Scheduled Task on Windows."""
+"""Keep the scheduler running all week: a systemd user service on Linux, a launch agent on macOS, a Scheduled Task on Windows."""
 import os
 import subprocess
 import sys
 
+from . import paths
 from .scheduler import self_cmd
 
+LABEL = "com.cougstival.leaderboard"
 NAME = "cougstival-leaderboard"
 TASK = "CougstivalLeaderboard"
 
@@ -21,6 +23,34 @@ RestartSec=15
 
 [Install]
 WantedBy=default.target
+"""
+
+
+def plist_path():
+    return os.path.expanduser(f"~/Library/LaunchAgents/{LABEL}.plist")
+
+
+def plist_text():
+    """macOS launch agent: starts at login, restarts if it stops, and caffeinate keeps the Mac from idle-sleeping."""
+    from xml.sax.saxutils import escape
+    args = ["/usr/bin/caffeinate", "-is"] + self_cmd("run")
+    items = "\n".join(f"    <string>{escape(a)}</string>" for a in args)
+    log = escape(paths.path("logs", "service.log"))
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>{LABEL}</string>
+  <key>ProgramArguments</key>
+  <array>
+{items}
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>StandardOutPath</key><string>{log}</string>
+  <key>StandardErrorPath</key><string>{log}</string>
+</dict>
+</plist>
 """
 
 
@@ -51,6 +81,15 @@ def install():
     if sys.platform == "win32":
         code, out = _ps(powershell_install_script())
         return code == 0, out or "Scheduled task created and started. It also starts every time you log in."
+    if sys.platform == "darwin":
+        os.makedirs(os.path.dirname(plist_path()), exist_ok=True)
+        os.makedirs(paths.path("logs"), exist_ok=True)
+        with open(plist_path(), "w") as f:
+            f.write(plist_text())
+        target = f"gui/{os.getuid()}"
+        _run(["launchctl", "bootout", f"{target}/{LABEL}"])        # in case an older copy is loaded
+        code, out = _run(["launchctl", "bootstrap", target, plist_path()])
+        return code == 0, out or "Service installed and started. It starts at login and restarts if it stops."
     unit_dir = os.path.expanduser("~/.config/systemd/user")
     os.makedirs(unit_dir, exist_ok=True)
     with open(os.path.join(unit_dir, NAME + ".service"), "w") as f:
@@ -67,6 +106,8 @@ def install():
 def stop():
     if sys.platform == "win32":
         code, out = _ps(f"Stop-ScheduledTask -TaskName '{TASK}'")
+    elif sys.platform == "darwin":
+        code, out = _run(["launchctl", "bootout", f"gui/{os.getuid()}/{LABEL}"])
     else:
         code, out = _run(["systemctl", "--user", "stop", NAME + ".service"])
     return code == 0, out or "Stopped."
@@ -79,6 +120,11 @@ def status():
         if code:
             return "not installed"
         return "running" if out.strip() == "Running" else "stopped"
+    if sys.platform == "darwin":
+        if not os.path.exists(plist_path()):
+            return "not installed"
+        code, out = _run(["launchctl", "print", f"gui/{os.getuid()}/{LABEL}"])
+        return "running" if code == 0 and "state = running" in out else "stopped"
     if not os.path.exists(os.path.expanduser(f"~/.config/systemd/user/{NAME}.service")):
         return "not installed"
     code, out = _run(["systemctl", "--user", "is-active", NAME + ".service"])

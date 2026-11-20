@@ -8,12 +8,15 @@
     logs/         app.log
 """
 import os
+import sys
 
 
 def home():
     custom = os.environ.get("COUGSTIVAL_HOME")
     if custom:
         base = custom
+    elif sys.platform == "darwin":
+        base = os.path.expanduser("~/Library/Application Support/CougstivalLeaderboard")
     elif os.name == "nt":
         base = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "CougstivalLeaderboard")
     else:

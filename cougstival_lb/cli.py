@@ -19,7 +19,8 @@ def main(argv=None):
     _log_to_file_if_no_console()
     p = argparse.ArgumentParser(prog="cougstival-lb", description="Cougstival leaderboard")
     sub = p.add_subparsers(dest="cmd")
-    sub.add_parser("setup", help="open the setup app (default)")
+    s = sub.add_parser("setup", help="open the setup app (default)")
+    s.add_argument("--no-browser", action="store_true", help="don't open a browser window, just print the address")
     sub.add_parser("run", help="run the scheduler (leave running)")
     sub.add_parser("once", help="do one update")
     c = sub.add_parser("check-login", help="test the Goosechase login")
@@ -34,7 +35,7 @@ def main(argv=None):
 
     if a.cmd in (None, "setup"):
         from .setup_server import serve_setup
-        return serve_setup()
+        return serve_setup(open_browser=not getattr(a, "no_browser", False))
     if a.cmd == "version":
         print(__version__)
         return 0

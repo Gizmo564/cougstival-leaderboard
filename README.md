@@ -16,6 +16,7 @@ GitHub Pages site or to your local network. Built for Cougstival, usable for any
 ## Install
 Download from the [Releases](../../releases) page:
 - **Ubuntu / Debian:** the `.deb` file. Install with `sudo apt install ./cougstival-leaderboard_*.deb`, then open **Leaderboard Setup** from the app menu (or run `cougstival-lb`).
+- **macOS (build it yourself):** run `packaging/build_mac.sh` on a Mac. It runs the tests, builds `Leaderboard Setup.app` and a `.dmg`, and checks the app starts. Not part of the GitHub release (macOS build minutes cost more); the app is only ad-hoc signed.
 - **Windows 10/11:** `LeaderboardKit-Setup-*.exe`. Publishing to GitHub also needs [Git for Windows](https://git-scm.com/download/win) and the Windows OpenSSH Client (an optional Windows feature, usually present).
 
 The setup opens in your web browser (a page served only on your own computer). Work down the sections:
@@ -36,18 +37,18 @@ No GitHub needed. The scheduler serves the page on the port you choose; people o
 `http://<this computer's address>:<port>/`. Your firewall may ask to allow it.
 
 ## Keeping it running
-**Start and keep running** installs a systemd user service (Linux) or a Scheduled Task that starts at login (Windows).
+**Start and keep running** installs a systemd user service (Linux), a launch agent (macOS) or a Scheduled Task (Windows), each starting at login.
 Keep the computer on, logged in and online for the whole event. On Linux the service asks the system not to sleep while it runs;
-on Windows it asks Windows not to sleep. Only one scheduler runs at a time per computer; a second copy exits immediately.
+on macOS it runs under `caffeinate`; on Windows it asks Windows not to sleep. Only one scheduler runs at a time per computer; a second copy exits immediately.
 Never run the same event from two computers at once: both would publish and send alerts.
 
-Your settings, the saved Goosechase login and logs are in `~/.local/share/cougstival-leaderboard` (Linux) or
+Your settings, the saved Goosechase login and logs are in `~/.local/share/cougstival-leaderboard` (Linux), `~/Library/Application Support/CougstivalLeaderboard` (macOS) or
 `%APPDATA%\CougstivalLeaderboard` (Windows). `secrets.json` there holds your password in plain text, readable only by your account.
 
 ## Honest limits
 - It reads Goosechase through the same internal calls the admin web page makes. That is not a documented public API and Goosechase can change it.
 - A captcha at login may stop the quiet login test. Use **Test with a visible window** once and finish logging in; the session is remembered.
-- The Windows installer and Task Scheduler setup, the GitHub push, and per-participant boards are built to the same design as the tested
+- The macOS launch agent, the Windows installer and Task Scheduler setup, the GitHub push, and per-participant boards are built to the same design as the tested
   Linux and team versions but have not been run on real Windows or against live participant data.
 - The login session expires if you are logged out of Goosechase; the alert tells you.
 
