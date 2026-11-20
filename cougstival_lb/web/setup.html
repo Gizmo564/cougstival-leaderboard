@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leaderboard Setup</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --fg:#1a1a1a; --muted:#5f6670; --line:#dfe3e8; --accent:#0a4aa6; --ok:#1a7f37; --bad:#b42318; --code:#f1f3f6; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#121417; --card:#1b1f24; --fg:#eceff3; --muted:#9aa3ad; --line:#2f353d; --accent:#7fb0ff; --ok:#4cc26a; --bad:#ff8a80; --code:#14181c; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  main { max-width: 820px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.5rem; margin: 8px 0 4px; }
+  h2 { font-size: 1.1rem; margin: 0 0 4px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:14px 0; }
+  .muted { color: var(--muted); font-size:.9rem; }
+  label { display:block; font-weight:600; margin:12px 0 4px; }
+  label.inline { display:inline-flex; gap:6px; align-items:center; font-weight:400; margin:4px 12px 4px 0; }
+  input[type=text], input[type=password], input[type=email], input[type=number], input[type=datetime-local], input[type=date], input[type=time], select {
+    width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg); font:inherit; }
+  input[type=color] { width:56px; height:38px; padding:2px; border:1px solid var(--line); border-radius:8px; background:var(--bg); }
+  .row { display:flex; gap:12px; flex-wrap:wrap; } .row > * { flex:1 1 180px; }
+  button { font:inherit; padding:8px 14px; border-radius:8px; border:1px solid var(--accent); background:transparent; color:var(--accent); cursor:pointer; margin:6px 8px 0 0; }
+  button.primary { background:var(--accent); color:var(--bg); }
+  button:disabled { opacity:.55; cursor:default; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+  table { width:100%; border-collapse:collapse; margin-top:8px; } td,th { padding:4px 4px; text-align:left; font-size:.9rem; } th { color:var(--muted); font-weight:600; }
+  td input { padding:6px 8px; }
+  pre { background:var(--code); border-radius:8px; padding:10px; overflow:auto; max-height:260px; font-size:.85rem; white-space:pre-wrap; margin:8px 0 0; }
+  .msg { margin-top:10px; padding:8px 12px; border-radius:8px; } .msg.ok { color:var(--ok); border:1px solid var(--ok); } .msg.bad { color:var(--bad); border:1px solid var(--bad); }
+  .pill { display:inline-block; padding:2px 10px; border-radius:999px; border:1px solid var(--line); font-size:.85rem; }
+  .pill.ok { color:var(--ok); border-color:var(--ok); }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Leaderboard Setup</h1>
+  <p class="muted">Fill in the sections, press <b>Save settings</b>, then test and start. Your password and private links are stored only on this computer and are never shown again.</p>
+
+  <section id="s1">
+    <h2>1. Goosechase</h2>
+    <label for="email">Studio login email</label>
+    <input id="email" type="email" autocomplete="off">
+    <label for="password">Studio password <span class="muted" id="pwnote"></span></label>
+    <input id="password" type="password" autocomplete="new-password">
+    <label for="exp">Experience link or ID</label>
+    <input id="exp" type="text" placeholder="https://studio.goosechase.com/experience/…">
+    <p class="muted">Open your experience in Goosechase Studio and paste the address from the browser bar.</p>
+    <button type="button" class="primary" data-job="check-login">Test login and link</button>
+    <button type="button" data-job="check-login-headed">Test with a visible window</button>
+    <p class="muted">Testing saves your settings first, then logs in and counts the teams and submissions it finds. If it says "Login works", the email, password and link are right. The first test needs the browser installed (section 6).</p>
+    <pre id="out1" hidden></pre>
+  </section>
+
+  <section id="s2">
+    <h2>2. The event</h2>
+    <div class="row">
+      <div><label for="title">Site title (shown at the top of the leaderboard)</label><input id="title" type="text" placeholder="e.g. Cougstival 2027 Leaderboard"></div>
+      <div style="flex:0 0 90px"><label for="accent">Color</label><input id="accent" type="color"></div>
+    </div>
+    <label for="tz">Timezone</label>
+    <select id="tz"></select>
+    <label>Who appears on the boards</label>
+    <label class="inline"><input type="radio" name="display" value="team"> Team names (or solo players, when there are no teams)</label>
+    <label class="inline"><input type="radio" name="display" value="participant"> Individual participants</label>
+    <label for="tie">If two have the same points</label>
+    <select id="tie">
+      <option value="share">Share the rank (no tiebreaker)</option>
+      <option value="earliest">Whoever scored last earliest ranks higher</option>
+      <option value="most_subs">More submissions ranks higher</option>
+      <option value="alpha">Share the rank, list alphabetically</option>
+    </select>
+    <label for="after">Points earned after a day closes</label>
+    <select id="after">
+      <option value="total_only">Count toward the Total only</option>
+      <option value="next_day">Roll into the next day</option>
+    </select>
+  </section>
+
+  <section id="s3">
+    <h2>3. Daily schedule</h2>
+    <p class="muted">Each day's board counts points from <b>open</b> up to (not including) <b>close</b>. The scheduler always runs exactly at each close time.</p>
+    <div class="row">
+      <div><label for="first">First day</label><input id="first" type="date"></div>
+      <div><label for="ndays">Number of days</label><input id="ndays" type="number" min="1" max="31" value="6"></div>
+      <div><label for="dopen">Opens at</label><input id="dopen" type="time" value="00:00"></div>
+      <div><label for="dclose">Closes at</label><input id="dclose" type="time" value="17:00"></div>
+    </div>
+    <button type="button" id="gen">Fill the table</button>
+    <table id="days"><thead><tr><th>Name</th><th>Opens</th><th>Closes</th><th></th></tr></thead><tbody></tbody></table>
+    <button type="button" id="addday">Add a day</button>
+    <p class="muted" id="nextnote" hidden>With "roll into the next day", each day opens when the previous one closes, so only the first day's open time is used.</p>
+  </section>
+
+  <section id="s4">
+    <h2>4. Alerts (recommended)</h2>
+    <p class="muted">Get a phone alert if the login breaks or updates stop. Install the free <b>ntfy</b> app, subscribe to a long random topic name, and enter it here. Optionally add a <b>healthchecks.io</b> ping URL, which alerts you if this computer goes silent.</p>
+    <label for="ntfy">ntfy topic <span class="muted" id="ntfynote"></span></label>
+    <input id="ntfy" type="password" autocomplete="off">
+    <label for="ping">healthchecks.io ping URL <span class="muted" id="pingnote"></span></label>
+    <input id="ping" type="password" autocomplete="off">
+    <button type="button" data-job="test-alert">Send test alert</button>
+    <button type="button" data-job="test-ping">Send test ping</button>
+  </section>
+
+  <section id="s5">
+    <h2>5. Where the leaderboard is published</h2>
+    <label class="inline"><input type="radio" name="mode" value="github"> My own GitHub Pages site (public on the internet)</label>
+    <label class="inline"><input type="radio" name="mode" value="local"> Local only (this computer and its network, no GitHub)</label>
+    <div id="ghbox" hidden>
+      <label for="repo">GitHub repository (owner/name)</label>
+      <input id="repo" type="text" placeholder="yourname/our-leaderboard">
+      <p class="muted">Create an empty <b>public</b> repository on GitHub first. Then save your settings and press the button below; it prints a key to add to the repository (Settings &gt; Deploy keys, with write access) and tells you the last Pages step. Needs <b>git</b> and <b>ssh</b> installed.</p>
+      <label for="gitemail">Email to put on the update commits (optional)</label>
+      <input id="gitemail" type="text" placeholder="you@users.noreply.github.com">
+      <button type="button" data-job="github-check">Connect GitHub and test</button>
+    </div>
+    <div id="localbox" hidden>
+      <label for="port">Port</label>
+      <input id="port" type="number" min="1024" max="65535" value="8080">
+      <p class="muted">People on the same network open <b>http://this-computer's-address:<span id="portshow">8080</span>/</b>. Your computer's firewall may ask to allow it.</p>
+    </div>
+  </section>
+
+  <section id="s6">
+    <h2>6. Save, test and start</h2>
+    <button type="button" class="primary" id="save">Save settings</button>
+    <div id="savemsg"></div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+    <p><b>Browser:</b> <span class="pill" id="browserpill"></span>
+      <button type="button" data-job="install-browser" id="instbrowser">Install the browser (one time, a few minutes)</button></p>
+    <p class="muted">If the login test fails (for example a captcha), use the visible-window test in section 1, finish logging in there, and it will be remembered.</p>
+    <p><b>Update:</b> <button type="button" data-job="once">Run one update now</button></p>
+    <p><b>Always on:</b> <span class="pill" id="svcpill"></span>
+      <button type="button" class="primary" id="svcstart">Start and keep running</button>
+      <button type="button" id="svcstop">Stop</button></p>
+    <p class="muted">Starting installs a background service: a systemd user service on Linux, a Scheduled Task on Windows. It starts at login and restarts itself if it stops. Keep the computer on and awake all event.</p>
+    <p><b>Your site:</b> <a id="siteurl" href="#" target="_blank" rel="noopener"></a></p>
+    <pre id="out" hidden></pre>
+  </section>
+  <p><button type="button" id="quit">Close setup</button></p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const token = location.hash.slice(1);
+const api = async (path, body) => {
+  const r = await fetch(path, { method: body ? "POST" : "GET", headers: { "X-Token": token, "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  return r.json();
+};
+const radio = name => document.querySelector(`input[name=${name}]:checked`)?.value;
+const setRadio = (name, v) => { const e = document.querySelector(`input[name=${name}][value=${v}]`); if (e) e.checked = true; };
+const msg = (el, text, ok) => { el.replaceChildren(); const d = document.createElement("div"); d.className = "msg " + (ok ? "ok" : "bad"); d.textContent = text; el.append(d); };
+
+// ---- days table
+const dayRow = (d = {}) => {
+  const tr = document.createElement("tr");
+  const cell = (type, val, cls) => { const td = document.createElement("td"); const i = document.createElement("input"); i.type = type; i.value = val || ""; i.className = cls; td.append(i); tr.append(td); return i; };
+  cell("text", d.name, "dn"); cell("datetime-local", d.open, "do"); cell("datetime-local", d.close, "dc");
+  const td = document.createElement("td"); const b = document.createElement("button"); b.type = "button"; b.textContent = "Remove"; b.onclick = () => { tr.remove(); syncAfter(); }; td.append(b); tr.append(td);
+  $("days").tBodies[0].append(tr);
+};
+const readDays = () => [...$("days").tBodies[0].rows].map(r => ({ name: r.querySelector(".dn").value.trim(), open: r.querySelector(".do").value, close: r.querySelector(".dc").value }));
+const setDays = days => { $("days").tBodies[0].replaceChildren(); days.forEach(dayRow); syncAfter(); };
+const pad = n => String(n).padStart(2, "0");
+$("gen").onclick = () => {
+  const first = $("first").value; if (!first) { msg($("savemsg"), "Pick the first day's date.", false); return; }
+  const n = Math.min(31, Math.max(1, +$("ndays").value || 1)), out = [];
+  for (let i = 0; i < n; i++) {
+    const d = new Date(first + "T12:00:00"); d.setDate(d.getDate() + i);
+    const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    out.push({ name: d.toLocaleDateString("en-US", { weekday: "long" }), open: `${date}T${$("dopen").value}`, close: `${date}T${$("dclose").value}` });
+  }
+  setDays(out); $("savemsg").replaceChildren();
+};
+$("addday").onclick = () => { dayRow({}); syncAfter(); };
+function syncAfter() {
+  const next = $("after").value === "next_day";
+  $("nextnote").hidden = !next;
+  [...$("days").tBodies[0].rows].forEach((r, i) => { r.querySelector(".do").disabled = next && i > 0; });
+}
+$("after").onchange = syncAfter;
+
+// ---- publishing
+function syncMode() { const m = radio("mode"); $("ghbox").hidden = m !== "github"; $("localbox").hidden = m !== "local"; }
+document.querySelectorAll("input[name=mode]").forEach(e => e.onchange = syncMode);
+$("port").oninput = () => { $("portshow").textContent = $("port").value; };
+
+// ---- load / save
+let cur = null;
+async function load() {
+  cur = await api("/api/state");
+  const zones = Intl.supportedValuesOf("timeZone");
+  const mine = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  for (const z of [mine, cur.config?.timezone]) if (z && !zones.includes(z)) zones.unshift(z);   // e.g. "UTC" is not in the browser's list
+  $("tz").replaceChildren(...zones.map(z => { const o = document.createElement("option"); o.value = o.textContent = z; return o; }));
+  const c = cur.config;
+  $("email").value = cur.email || "";
+  $("pwnote").textContent = cur.has.password ? "(saved; leave blank to keep it)" : "";
+  $("ntfynote").textContent = cur.has.ntfy ? "(saved; leave blank to keep it)" : "";
+  $("pingnote").textContent = cur.has.ping ? "(saved; leave blank to keep it)" : "";
+  $("tz").value = c?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  $("title").value = c?.title || "";
+  $("accent").value = c?.accent || "#0a4aa6";
+  $("exp").value = c?.experience_id || "";
+  setRadio("display", c?.display || "team");
+  $("tie").value = c?.tiebreaker || "share";
+  $("after").value = c?.after_close || "total_only";
+  setRadio("mode", c?.publish.mode || "local");
+  $("repo").value = c?.publish.repo || "";
+  $("gitemail").value = c?.publish.git_email || "";
+  $("port").value = c?.publish.port || 8080; $("portshow").textContent = $("port").value;
+  setDays(c?.days?.length ? c.days : []);
+  syncMode();
+  status();
+}
+function status() {
+  $("browserpill").textContent = cur.browser_installed ? "installed" : "not installed yet";
+  $("browserpill").className = "pill" + (cur.browser_installed ? " ok" : "");
+  $("svcpill").textContent = cur.service; $("svcpill").className = "pill" + (cur.service === "running" ? " ok" : "");
+  const a = $("siteurl"); a.textContent = cur.site_url || "(save settings first)"; a.href = cur.site_url || "#";
+}
+async function saveAll() {
+  const body = {
+    config: { experience_id: $("exp").value, timezone: $("tz").value, title: $("title").value, accent: $("accent").value,
+      display: radio("display"), tiebreaker: $("tie").value, after_close: $("after").value, days: readDays(),
+      publish: { mode: radio("mode"), repo: $("repo").value.trim(), git_email: $("gitemail").value.trim(), port: $("port").value } },
+    secrets: { gc_email: $("email").value, gc_password: $("password").value, ntfy_topic: $("ntfy").value, ping_url: $("ping").value },
+  };
+  const r = await api("/api/save", body);
+  if (r.ok) { msg($("savemsg"), "Saved. If the always-on service is running it picks this up on its next run.", true); ["password", "ntfy", "ping"].forEach(i => $(i).value = ""); await load(); return true; }
+  msg($("savemsg"), r.errors.join(" "), false);
+  $("savemsg").scrollIntoView({ block: "center" });
+  return false;
+}
+$("save").onclick = saveAll;
+
+// ---- jobs
+let poll = null;
+let outEl = "out";
+function showOut(lines, ok) { const o = $(outEl); o.hidden = false; o.textContent = lines.join("\n") + (ok === true ? "\n\nDone." : ok === false ? "\n\nFinished with a problem." : ""); o.scrollTop = o.scrollHeight; }
+const NEEDS_SAVE = ["check-login", "check-login-headed", "once", "test-alert", "test-ping", "github-check"];
+document.querySelectorAll("button[data-job]").forEach(b => b.onclick = async () => {
+  if (NEEDS_SAVE.includes(b.dataset.job) && !(await saveAll())) { showOut(["Fix the problem shown in section 6, then try again."], false); return; }
+  outEl = b.closest("section").id === "s1" ? "out1" : "out"; $("out").hidden = $("out1").hidden = true;
+  const r = await api("/api/job", { name: b.dataset.job });
+  if (r.error || r.ok === false) { showOut([r.error || "Another task is still running. Wait for it to finish."], false); return; }
+  clearInterval(poll);
+  poll = setInterval(async () => {
+    const j = await api("/api/job");
+    showOut(j.lines, j.running ? null : j.ok);
+    if (!j.running) { clearInterval(poll); cur = await api("/api/state"); status(); }
+  }, 1000);
+});
+$("svcstart").onclick = async () => { const r = await api("/api/service", { action: "install" }); showOut([r.message], r.ok); cur.service = r.status; status(); };
+$("svcstop").onclick = async () => { const r = await api("/api/service", { action: "stop" }); showOut([r.message], r.ok); cur.service = r.status || "stopped"; status(); cur = await api("/api/state"); status(); };
+$("quit").onclick = async () => { await api("/api/quit", {}); document.body.textContent = "Setup closed. You can close this tab."; };
+load();
+</script>
+</body>
+</html>

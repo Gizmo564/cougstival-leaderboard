@@ -1,0 +1,43 @@
+name: release
+# Push a tag like v1.0.0 to build the installers and attach them to a GitHub release.
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  linux:
+    runs-on: ubuntu-22.04      # older Ubuntu, so the program also runs on newer ones
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt pytest pyinstaller
+      - run: python -m pytest -q tests
+      - run: >
+          pyinstaller --noconfirm --onedir --name cougstival-lb --paths "$PWD" --collect-all playwright
+          --add-data "$PWD/cougstival_lb/web:cougstival_lb/web" --hidden-import tzdata packaging/app_entry.py
+      - run: packaging/build_deb.sh dist/cougstival-lb "${GITHUB_REF_NAME#v}" out
+      - env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release create "$GITHUB_REF_NAME" out/*.deb --title "$GITHUB_REF_NAME" --generate-notes || gh release upload "$GITHUB_REF_NAME" out/*.deb --clobber
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt pytest pyinstaller
+      - run: python -m pytest -q tests
+      - shell: bash
+        run: >
+          pyinstaller --noconfirm --onedir --noconsole --name CougstivalLeaderboard --paths "$PWD" --collect-all playwright
+          --add-data "cougstival_lb/web;cougstival_lb/web" --hidden-import tzdata packaging/app_entry.py
+      - run: choco install innosetup -y --no-progress
+      - shell: bash
+        run: |
+          "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" "//DAppVersion=${GITHUB_REF_NAME#v}" packaging/windows.iss
+      - shell: bash
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          for i in 1 2 3 4 5; do gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && break; gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes 2>/dev/null && break; sleep 10; done
+          gh release upload "$GITHUB_REF_NAME" installer/*.exe --clobber
